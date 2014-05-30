@@ -1,4 +1,4 @@
-library(rChartsDygraph); library(quantmod)
+library(rChartsDygraphs); library(quantmod)
 getSymbols("SPY", from = "1993-01-01")
 SPY <- data.frame(Date=index(SPY), Price=SPY$SPY.Close)
 SPY$Momentum20days <- momentum(SPY$SPY.Close, 20)/lag(SPY$SPY.Close, 20)*100
