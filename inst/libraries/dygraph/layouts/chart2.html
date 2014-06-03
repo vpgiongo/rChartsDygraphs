@@ -3,6 +3,8 @@
   if (typeof blockRedraw === 'undefined') { var blockRedraw = false };
   (function(){
     var params = {{{ chartParams }}};
+    params.options.height = params.height;
+    params.options.width = params.width;    
     gs.push(new Dygraph(
       document.getElementById( '{{chartId}}' ),
       _.unzip(params.data),

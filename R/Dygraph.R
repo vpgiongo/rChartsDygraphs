@@ -35,7 +35,7 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
                        , methods = list(
   initialize = function(){
     callSuper()
-    params <<- c(params, list(options = list(width=params$width, height=params$height)))
+    params <<- c(params, list(options = list()))
   },
   parseData = function(data, x, y, y2){
     if(is.xts(data)) {
@@ -70,6 +70,16 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
   },
   setOpts = function(...){
     opts <- list(...)
+    if(!is.null(opts$height)) {
+      .self$set(height = opts$height)
+      #remove since will be in parent params
+      opts$height <- NULL
+    }
+    if(!is.null(opts$width)) {
+      .self$set(width = opts$width)
+      #remove since will be in parent params
+      opts$width <- NULL
+    }
     fix_dygraph_options <- function(x) {
       # dygraph colors parameter accepts JSON array only, no character string
       if(length(x$colors))
