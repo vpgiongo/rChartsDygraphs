@@ -12,6 +12,9 @@
 #' @param ... further options passed to the dygraph options slot. See http://dygraphs.com/options.html
 #' @params defaults logical. Should some dygraph options defaults be preloaded? Default is TRUE. 
 #' Options supplied via ... will still override these defaults.
+#' @params candlestick logical. Display OHLC data as candlesticks? 
+#' Defaults to is.OHLC(data). Effort is made to detect OHLC columns by their names.
+#' data must contain all of the four series. Redundant columns are discarded.
 #' @export
 #' @import quantmod
 dgPlot <- dyPlot <- dygraph <- dygraphPlot<- function(data, x, y, y2, 
