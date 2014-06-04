@@ -1,0 +1,44 @@
+<!doctype HTML>
+<meta charset = 'utf-8'>
+<html>
+  <head>
+    {{# assets.css }}
+    <link rel='stylesheet' href='{{{ . }}}'>
+    {{/ assets.css }}
+    
+    <!-- manually add bootstrap now as a hack;  need to fix-->
+    <!-- for now just grab css but could also use bootstrap js features-->
+    <link rel='stylesheet' href = 'http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'>
+    
+    {{# assets.jshead }}
+    <script src='{{{ . }}}' type='text/javascript'></script>
+    {{/ assets.jshead }}  
+  </head>
+  
+  <body>
+    <script>
+      var blockRedraw = false;
+      var gs = [];
+    </script>
+    <!--
+    dygraphs will auto fill height and width its parent div
+    if not height and width give.  we might be able to exploit
+    this with bootstrap.  bootstrap will determine width 
+    and then we can ignore the width paramter and automatically
+    get some responsiveness and a somewhat decent grid.  a crude first
+    hack will be to change the chartDiv template to add a row open and close.
+    
+    something like for the first in a row
+    <div class = 'row'>"<{{container}} id = '{{ chartId }}' class = 'rChart {{ lib }} col-md-6'></{{ container}}>"
+    ... and for the last in a row
+    "<{{container}} id = '{{ chartId }}' class = 'rChart {{ lib }} col-md-4'></{{ container}}></div>"
+    
+    eventually will need to let the function layout_dygraphs handle this
+    -->
+    <div class = "container">
+      {{{ chartDivs }}}
+    </div> <!-- container -->
+
+
+  </body>
+</html>

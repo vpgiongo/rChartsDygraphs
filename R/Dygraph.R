@@ -194,6 +194,82 @@ layout_dygraphs <- function(...) {
   }
 }
 
+
+## need to make one function but for experiments separate and isolate
+## main difference is would need to allow specification of a template
+
+#' Display multiple dygraphs
+#' 
+#' ...
+#' 
+#' @param ... list of dygraph objects to display
+layout_dygraphs_bootstrap <- function(...) {
+  l = list(...)
+  showCharts = if(length(l)==1 & is.list(l)) l[[1]] else l
+  
+  #get the divs for each of the charts as a string
+  #this will be used by whisker.render later
+  chartDivs <- paste(
+    sapply(
+      showCharts,function(rCh){
+        return(paste(capture.output(rCh$print()),collapse="\n"))
+      }
+    ),
+    collapse = "\n"
+  )
+  
+  viewer = getOption("viewer")  #if not null then use RStudio viewer
+  
+  #if viewer is not null then 
+  #we will need to either use http assets or copy js and css into same directory
+  if (!grepl("^http", showCharts[[1]]$LIB$url) && !is.null(viewer)) {
+    temp_dir = tempfile(pattern = 'rCharts')
+    dir.create(temp_dir)
+    suppressMessages(copy_dir_(
+      showCharts[[1]]$LIB$url,
+      file.path(temp_dir,showCharts[[1]]$LIB$name)
+    ))
+    tf <- file.path(temp_dir, "index.html")
+    
+    #get css and script files to add into head
+    #will need to copy these files in directory to use with RStudio Viewer
+    assets = get_assets(showCharts[[1]]$LIB, static = F, cdn = F)
+    
+    cat(
+      whisker::whisker.render(
+        readLines(
+          system.file(
+            "/libraries/dygraph/layouts/multi_bootstrap.html",
+            package = "rChartsDygraphs")
+        )
+      ),
+      file = tf)
+    
+    viewer(tf)
+  } else {
+    #if not using RStudio Viewer can use assets in rChartsDygraphs directory
+    #or if using RStudio Viewer and non local (http assets)
+    #  can use those without copying
+    assets = get_assets(showCharts[[1]]$LIB, static = T, cdn = F)
+    
+    cat(
+      whisker::whisker.render(
+        readLines(
+          system.file(
+            "/libraries/dygraph/layouts/multi.html",
+            package = "rChartsDygraphs")
+        )
+      ),
+      file = tf <- tempfile(fileext = ".html")
+    )
+    if (!is.null(viewer)) {
+      viewer(tf)
+    } else {
+      browseURL(tf)
+    }
+  }
+}
+
 #' Just a copy of rCharts::get_lib
 #' 
 #' Copied to rChartsDygraphs package namespace, for Dygraph$new() to initialize lib field properly 
