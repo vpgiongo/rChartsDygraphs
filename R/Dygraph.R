@@ -13,20 +13,27 @@
 #' @params defaults logical. Should some dygraph options defaults be preloaded? Default is TRUE. 
 #' Options supplied via ... will still override these defaults.
 #' @export
-dgPlot <- dyPlot <- dygraph <- dygraphPlot<- function(data, x, y, y2, sync=FALSE, defaults=TRUE, ...){
+#' @import quantmod
+dgPlot <- dyPlot <- dygraph <- dygraphPlot<- function(data, x, y, y2, 
+                                                      sync=FALSE, 
+                                                      defaults=TRUE, 
+                                                      candlestick=is.OHLC(data), 
+                                                      ...){
   
   myChart <- Dygraph$new()
-  myChart$parseData(data, x, y, y2)
+  myChart$parseData(data, x, y, y2, as.candlestick=candlestick)
   if(defaults)
     myChart$setDefaults(...)
   myChart$setOpts(...) # dygraph javascript options
-  # myChart$setLib( "." )
-  # myChart$templates$script = "layouts/chart2.html"
   myChart$templates$script = system.file("/libraries/dygraph/layouts/chart2.html"
                                          , package = "rChartsDygraphs")
   myChart$setTemplate(afterScript = "<script></script>")
   if(sync)
     myChart$synchronize()
+  if(candlestick) {
+    myChart$candlestick()
+  }
+
   
   return(myChart$copy())
 }
@@ -37,7 +44,7 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
     callSuper()
     params <<- c(params, list(options = list(width=params$width, height=params$height)))
   },
-  parseData = function(data, x, y, y2){
+  parseData = function(data, x, y, y2, as.candlestick){
     if(is.xts(data)) {
       t = index(data)
       data = cbind(t, as.data.frame(data))
@@ -46,6 +53,14 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
       x <- names(data)[1]
     if(missing(y))
       y = setdiff(names(data), x)
+    
+    # dygraphs.js requirement: data must be exactly 4 columns in specific order
+    if(as.candlestick){
+      pos = c(has.Op(data, which=TRUE), has.Cl(data, which=TRUE), 
+              has.Hi(data, which=TRUE), has.Lo(data, which=TRUE))
+      y = names(data)[pos]
+    }
+    
     data[[x]] <- paste0("#!new Date(", as.numeric(as.POSIXct(data[[x]])) * 1000, ")!#")
     data[y] = lapply(data[y], function(x) as.numeric(x)) # temp fix for logical values
     data <- data[,c(x, y)]
@@ -78,6 +93,9 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
     }
   
     params$options <<- modifyList(params$options, fix_dygraph_options(opts))
+  },
+  candlestick = function(){
+    setOpts(plotter = "#!Dygraph.Plotters.candlePlotter!#")
   },
   synchronize = function(){
     setOpts(
