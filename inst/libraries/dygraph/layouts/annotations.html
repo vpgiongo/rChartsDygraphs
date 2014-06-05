@@ -1,0 +1,27 @@
+<script>
+  if (typeof gs === 'undefined') { var gs = [] };
+  if (typeof blockRedraw === 'undefined') { var blockRedraw = false };
+  (function(){
+    var params = {{{ chartParams }}};
+    gs.push(new Dygraph(
+      document.getElementById( '{{chartId}}' ),
+      _.unzip(params.data),
+      params.options
+    ));
+    
+    for (var i = 0; i < gs.length; i++) {
+      var g = gs[i];
+      g.ready(function () {
+        var labels = g.getLabels();
+        g.setAnnotations(_.map(params.options.annotations, function(annotation) {
+          if (_.indexOf(labels, annotation.series) === -1) {
+            if (_.isNumber(annotation.series)) {
+              annotation.series = labels[annotation.series];
+            }
+          }
+          return annotation;
+        }));
+      });
+    }
+  })();
+</script>
