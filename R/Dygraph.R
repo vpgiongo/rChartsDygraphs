@@ -15,12 +15,15 @@
 #' @params candlestick logical. Display OHLC data as candlesticks? 
 #' Defaults to is.OHLC(data). Effort is made to detect OHLC columns by their names.
 #' data must contain all of the four series. Redundant columns are discarded.
+#' @params trades data.frame with columns c("Start", "End", "Side", "Base", "PL"). 
 #' @export
 #' @import quantmod
+#' @import data.table
 dgPlot <- dyPlot <- dygraph <- dygraphPlot<- function(data, x, y, y2, 
                                                       sync=FALSE, 
                                                       defaults=TRUE, 
-                                                      candlestick=is.OHLC(data), 
+                                                      candlestick=is.OHLC(data),
+                                                      trades=NULL,
                                                       ...){
   
   myChart <- Dygraph$new()
@@ -28,16 +31,33 @@ dgPlot <- dyPlot <- dygraph <- dygraphPlot<- function(data, x, y, y2,
   if(defaults)
     myChart$setDefaults(...)
   myChart$setOpts(...) # dygraph javascript options
-  myChart$templates$script = system.file("/libraries/dygraph/layouts/chart2.html"
-                                         , package = "rChartsDygraphs")
+  myChart$setTemplate(script = system.file("/libraries/dygraph/layouts/chart2.html"
+                                         , package = "rChartsDygraphs"))
   myChart$setTemplate(afterScript = "<script></script>")
   if(sync)
     myChart$synchronize()
   if(candlestick) {
     myChart$candlestick()
   }
-
-  
+  if(length(trades)){
+    trades = as.data.table(trades)
+    entries = trades[, list(Date=Start, Side=Side, E="Entry", Price=Base, PL=PL)]
+    exits = trades[, list(Date=End, Side=Side, E="Exit", Price=Base*(1+PL), PL=PL)]
+    ann = rbindlist(list(entries, exits))
+    
+    ann[, canvas:="#!Dygraph.Circles.ARROW!#"]
+    ann[, rotation:=ifelse(Side=="Long", 
+                           ifelse(E=="Entry", "up", "down"), 
+                           ifelse(E=="Entry", "down", "up"))]
+    ann[, fillStyle:=ifelse(E=="Entry", "white", ifelse(PL>=0, "green", "red"))]
+    ann[, strokeStyle:="black"]
+    ann[, x:= paste0("#!Date.parse('", Date, "')!#")]
+    ann[, series:=1]
+    ann = ann[,c("series", "x", "canvas", "rotation","fillStyle", "strokeStyle"), with=F]
+    myChart$setOpts(annotations=toJSONArray(ann, json=F))
+    myChart$setTemplate(script=system.file("/libraries/dygraph/layouts/annotations.html"
+                                      , package = "rChartsDygraphs"))
+  }
   return(myChart$copy())
 }
 
