@@ -53,10 +53,31 @@ dgPlot <- dyPlot <- dygraph <- dygraphPlot<- function(data, x, y, y2,
     ann[, strokeStyle:="black"]
     ann[, x:= paste0("#!Date.parse('", Date, "')!#")]
     ann[, series:=1]
-    ann = ann[,c("series", "x", "canvas", "rotation","fillStyle", "strokeStyle"), with=F]
+    ann[, text:=paste0("<p><strong>Price</strong> ", round(Price,2), "<br>",
+        "</p>")]
+    ann = ann[,c("series", "x", "canvas", "rotation","fillStyle", "strokeStyle",
+                 "text"), with=F]
     myChart$setOpts(annotations=toJSONArray(ann, json=F))
+    myChart$setOpts(annotationMouseOverHandler= "#!
+      function(ann, point, dg, event) {
+        var bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.id = 'bubble' + ann.series + ann.x + i;
+        bubble.innerHTML = ann.text;
+        bubble.style.top = point.canvasy + 'px';
+        bubble.style.left = point.canvasx + 'px';
+        dg.graphDiv.appendChild(bubble);
+        ann.div.title = '';
+      }!#")
+    myChart$setOpts(annotationMouseOutHandler= "#!
+      function(ann, point, dg, event) {
+        var bubble = document.getElementById('bubble' + ann.series + ann.x + i);
+        if (bubble && bubble.parentNode) {
+          bubble.parentNode.removeChild(bubble);
+        }
+      }!#")
     myChart$setTemplate(script=system.file("/libraries/dygraph/layouts/annotations.html"
-                                      , package = "rChartsDygraphs"))
+                                           , package = "rChartsDygraphs"))
   }
   return(myChart$copy())
 }

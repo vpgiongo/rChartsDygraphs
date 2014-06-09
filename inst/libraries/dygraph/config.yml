@@ -1,5 +1,6 @@
 
 dygraphs:
+  css: css/bubble.css
   jshead: [js/dygraph-combined.js, js/lodash.js]
   cdn:
     jshead:
