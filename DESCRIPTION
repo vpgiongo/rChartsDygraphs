@@ -15,7 +15,9 @@ Depends:
     knitr,
     xts
 Imports:
-    RJSONIO
+    RJSONIO,
+    quantmod,
+    data.table
 Collate:
     'Dygraph.R'
 Repository: GitHub <github.com/danielkrizian/rChartsDygraphs> ; CRAN in the future
