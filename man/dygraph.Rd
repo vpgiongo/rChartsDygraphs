@@ -3,26 +3,36 @@
 \alias{dygraph}
 \title{Plot an interactive dygraph chart}
 \usage{
-dygraph(data, x, y, y2, sync = FALSE, defaults = TRUE,
-  candlestick = is.OHLC(data), trades = NULL, ...)
+dygraph(data, x, y, y2, sync = FALSE, defaults = TRUE, rebase = c(NULL,
+  100, "percent"), candlestick = is.OHLC(data), trades = NULL, ...)
 }
 \arguments{
 \item{data}{data.frame}
 
-\item{x}{optional character string identifying column in the data for x-axis (TODO: support for vector)
-If not supplied, attempt is made to detect it from timeBased data columns or rownames}
+\item{x}{optional character string identifying column in the data for x-axis
+(TODO: support for vector). If not supplied, attempt is made to detect it
+from timeBased data columns or rownames}
 
-\item{y}{optional character string identifying column in the data for y-axis series (TODO: support for vector)}
+\item{y}{optional character string identifying column in the data for y-axis
+series (TODO: support for vector)}
 
-\item{y2}{(not yet supported) optional character string identifying column in the data for secondary y-axis series (TODO: support for vector)}
+\item{y2}{(not yet supported) optional character string identifying column
+in the data for secondary y-axis series (TODO: support for vector)}
 
-\item{sync}{logical default FALSE. Set to TRUE and dygraph will react to highlights and redraws
-in other dygraphs on the same page. (TODO: supply vector of chartIds to sync this chart with)}
+\item{sync}{logical default FALSE. Set to TRUE and dygraph will react to
+highlights and redraws in other dygraphs on the same page.
+(TODO: supply vector of chartIds to sync this chart with)}
 
-\item{...}{further options passed to the dygraph options slot. See http://dygraphs.com/options.html}
+\item{...}{further options passed to the dygraph options slot.
+See http://dygraphs.com/options.html}
 
-\item{defaults}{logical. Should some dygraph options defaults be preloaded? Default is TRUE.
-Options supplied via ... will still override these defaults.}
+\item{defaults}{logical. Should some dygraph options defaults be preloaded?
+Default is TRUE. Options supplied via ... will still override these defaults.}
+
+\item{rebase}{either non-negative nonzero numeric or "percent" string. Default
+NULL. If provided, the chart lends itself to comparison of growth rates of multiple
+series expressed as indices starting from same base ("percent" starts from 0%).
+Redrawn on each zoom/pan action.}
 
 \item{candlestick}{logical. Display OHLC data as candlesticks?
 Defaults to is.OHLC(data). Effort is made to detect OHLC columns by their names.
@@ -34,15 +44,20 @@ data must contain all of the four series. Redundant columns are discarded.}
 Some desc
 }
 \examples{
-library(quantmod); require(data.table)
-getSymbols("SPY", from = "1993-01-01")
+require(quantmod); require(data.table)
+getSymbols("SPY", from = "2001-01-01")
 
-# run one-by-one and watch RStudio Viewer
-dygraph(data=SPY, legendFollow=TRUE, candlestick=TRUE)
-dygraph(data=SPY, legendFollow=TRUE) #autodetects candlestick if `is.OHLC(data)`
+dygraph(data=SPY, legendFollow=T, candlestick=T)
+dygraph(data=SPY, legendFollow=T) #autodetects is.OHLC(data)
 
-# trade annotations with popup information on mouseover
+# trade annotations (arrows)
 data(trades)
 dygraph(data=SPY[,"SPY.Close"], legendFollow=TRUE, trades=trades)
+
+# trade annotations (arrows)
+getSymbols("IBM", from = "2001-01-01", adjust=T)
+
+# relative performance
+dygraph(merge(IBM[,"IBM.Adjusted"], SPY[,"SPY.Adjusted"]), rebase="percent")
 }
 

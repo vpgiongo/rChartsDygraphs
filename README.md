@@ -2,7 +2,7 @@
 
 You can install `rCharts` from `github` using the `devtools` package
 
-```coffee
+```r
 require(devtools)
 install_github("rCharts","timelyportfolio",ref="dimple_layer") # use this specific branch with temp fix
 install_github('rChartsDygraphs', 'danielkrizian')
@@ -10,19 +10,25 @@ install_github('rChartsDygraphs', 'danielkrizian')
 
 ## Example 
 
-```coffee
-library(rChartsDygraphs); library(quantmod)
-getSymbols("SPY", from = "1993-01-01")
-SPY <- data.frame(Date=index(SPY), Price=SPY$SPY.Close)
-SPY$Momentum20days <- momentum(SPY$SPY.Close, 20)/lag(SPY$SPY.Close, 20)*100
+```r
+library(rChartsDygraphs); library(quantmod); require(data.table)
+getSymbols("SPY", from = "2001-01-01")
 
-dygraph1 <- dygraph(data=SPY[,c("Date","SPY.Close")], sync=TRUE, crosshair="vertical", legendFollow=TRUE, width=1000)
-dygraph2 <- dygraph(data=SPY[,c("Date","Momentum20days")], sync=TRUE, crosshair="vertical", legendFollow=TRUE, width=1000, colors='grey')
+# candlestick
+dygraph(data=SPY, legendFollow=T, candlestick=T)
 
-layout_dygraphs(dygraph1, dygraph2)
+# trade annotations (arrows)
+data(trades)
+dygraph(data=SPY[,"SPY.Close"], legendFollow=TRUE, trades=trades)
+
+# trade annotations (arrows)
+getSymbols("IBM", from = "2001-01-01", adjust=T)
+
+# relative performance
+dygraph(merge(IBM[,"IBM.Adjusted"], SPY[,"SPY.Adjusted"]), rebase="percent")
 ```
 
-This should produce [two charts like here (link)](http://rawgit.com/danielkrizian/rChartsDygraphs/master/examples/multi-layout.html)
+View interactive charts [like this (link)](http://rawgit.com/danielkrizian/rChartsDygraphs/master/examples/multi-layout.html)
 
 Zoom: mouse left-click & drag; Pan: Shift + mouse left-click & drag
 
