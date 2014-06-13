@@ -1,7 +1,6 @@
-#' dygraphs Plot
+#' Plot an interactive dygraph chart
 #' 
-#' ...
-#' 
+#' Some desc
 #' @param data data.frame
 #' @param x optional character string identifying column in the data for x-axis (TODO: support for vector)
 #' If not supplied, attempt is made to detect it from timeBased data columns or rownames
@@ -10,16 +9,27 @@
 #' @param sync logical default FALSE. Set to TRUE and dygraph will react to highlights and redraws 
 #' in other dygraphs on the same page. (TODO: supply vector of chartIds to sync this chart with)
 #' @param ... further options passed to the dygraph options slot. See http://dygraphs.com/options.html
-#' @params defaults logical. Should some dygraph options defaults be preloaded? Default is TRUE. 
+#' @param defaults logical. Should some dygraph options defaults be preloaded? Default is TRUE. 
 #' Options supplied via ... will still override these defaults.
-#' @params candlestick logical. Display OHLC data as candlesticks? 
+#' @param candlestick logical. Display OHLC data as candlesticks? 
 #' Defaults to is.OHLC(data). Effort is made to detect OHLC columns by their names.
 #' data must contain all of the four series. Redundant columns are discarded.
-#' @params trades data.frame with columns c("Start", "End", "Side", "Base", "PL"). 
+#' @param trades data.frame with columns c("Start", "End", "Side", "Base", "PL"). 
 #' @export
 #' @import quantmod
 #' @import data.table
-dgPlot <- dyPlot <- dygraph <- dygraphPlot<- function(data, x, y, y2, 
+#' @examples
+#' library(quantmod); require(data.table)
+#' getSymbols("SPY", from = "1993-01-01")
+#' 
+#' # run one-by-one and watch RStudio Viewer
+#' dygraph(data=SPY, legendFollow=TRUE, candlestick=TRUE)
+#' dygraph(data=SPY, legendFollow=TRUE) #autodetects candlestick if `is.OHLC(data)`
+#' 
+#' # trade annotations with popup information on mouseover
+#' data(trades)
+#' dygraph(data=SPY[,"SPY.Close"], legendFollow=TRUE, trades=trades)
+dygraph <- dgPlot <- dyPlot <- dygraphPlot<- function(data, x, y, y2, 
                                                       sync=FALSE, 
                                                       defaults=TRUE, 
                                                       candlestick=is.OHLC(data),
@@ -226,7 +236,7 @@ layout_dygraphs <- function(...) {
     #if not using RStudio Viewer can use assets in rChartsDygraphs directory
     #or if using RStudio Viewer and non local (http assets)
     #  can use those without copying
-    assets = get_assets(showCharts[[1]]$LIB, static = T, cdn = F)
+    assets = get_assets(showCharts[[1]]$LIB, static = TRUE, cdn = FALSE)
     
     cat(
       whisker::whisker.render(
@@ -246,9 +256,9 @@ layout_dygraphs <- function(...) {
   }
 }
 
-#' Just a copy of rCharts::get_lib
-#' 
-#' Copied to rChartsDygraphs package namespace, for Dygraph$new() to initialize lib field properly 
+# Just a copy of rCharts::get_lib
+# 
+# Copied to rChartsDygraphs package namespace, for Dygraph$new() to initialize lib field properly 
 get_lib <- function(lib){
   if (grepl("^http", lib)){
     return(list(name = basename(lib), url = lib))
@@ -262,10 +272,10 @@ get_lib <- function(lib){
   return(list(name = basename(lib), url = lib_url))
 }
 
-#' Just a copy of rCharts::add_lib_assets
-#' 
-#' Copied to rChartsDygraphs package namespace, so that it calls rChartsDygraphs::get_lib,
-#' not rCharts::get_lib
+# Just a copy of rCharts::add_lib_assets
+# 
+# Copied to rChartsDygraphs package namespace, so that it calls rChartsDygraphs::get_lib,
+# not rCharts::get_lib
 add_lib_assets <- function(lib, cdn = F){
   assets = get_assets(get_lib(lib), cdn = cdn)
   styles <- lapply(assets$css, function(style){
