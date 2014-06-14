@@ -4,7 +4,8 @@
 \title{Plot an interactive dygraph chart}
 \usage{
 dygraph(data, x, y, y2, sync = FALSE, defaults = TRUE, rebase = c(NULL,
-  100, "percent"), candlestick = is.OHLC(data), trades = NULL, ...)
+  100, "percent"), ribbon = list(colors = NULL, height = 1, pos = 0),
+  candlestick = is.OHLC(data), trades = NULL, ...)
 }
 \arguments{
 \item{data}{data.frame}
@@ -34,6 +35,12 @@ NULL. If provided, the chart lends itself to comparison of growth rates of multi
 series expressed as indices starting from same base ("percent" starts from 0%).
 Redrawn on each zoom/pan action.}
 
+\item{ribbon}{character vector or list. Draw colorful ribbon in the background.
+Useful for highlighting specific events/periods. `colors` - character vector
+of colors with the same length as NROW(data). `height` and `pos` are numeric
+arguments from <0,1> interval specifying ribbon size and position relative
+to the canvas.}
+
 \item{candlestick}{logical. Display OHLC data as candlesticks?
 Defaults to is.OHLC(data). Effort is made to detect OHLC columns by their names.
 data must contain all of the four series. Redundant columns are discarded.}
@@ -44,9 +51,10 @@ data must contain all of the four series. Redundant columns are discarded.}
 Some desc
 }
 \examples{
-require(quantmod); require(data.table)
+library(quantmod); require(data.table)
 getSymbols("SPY", from = "2001-01-01")
 
+# candlestick
 dygraph(data=SPY, legendFollow=T, candlestick=T)
 dygraph(data=SPY, legendFollow=T) #autodetects is.OHLC(data)
 
@@ -54,10 +62,17 @@ dygraph(data=SPY, legendFollow=T) #autodetects is.OHLC(data)
 data(trades)
 dygraph(data=SPY[,"SPY.Close"], legendFollow=TRUE, trades=trades)
 
-# trade annotations (arrows)
-getSymbols("IBM", from = "2001-01-01", adjust=T)
-
 # relative performance
+getSymbols("IBM", from = "2001-01-01", adjust=T)
 dygraph(merge(IBM[,"IBM.Adjusted"], SPY[,"SPY.Adjusted"]), rebase="percent")
+
+# color ribbon (highlight special events)
+dydata=SPY[,"SPY.Close"]
+colors = rep("transparent", NROW(dydata)) # must equal NROW(data)
+colors[1000:1550] = "lightgreen" # accepts "#90EE90" representation too
+colors[1700:2050] = "red"
+colors[2060:2140] = "lightblue"
+dygraph(data=dydata, ribbon=colors)
+dygraph(data=dydata, ribbon=list(colors=ribbon, height=0.2, pos=0.1))
 }
 
