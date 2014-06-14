@@ -236,6 +236,7 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
 #' ...
 #' 
 #' @param ... list of dygraph objects to display
+#' @export
 layout_dygraphs <- function(...) {
   l = list(...)
   showCharts = if(length(l)==1 & is.list(l)) l[[1]] else l

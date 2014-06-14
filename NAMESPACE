@@ -1,3 +1,4 @@
 export(dygraph)
+export(layout_dygraphs)
 import(data.table)
 import(quantmod)
