@@ -33,7 +33,7 @@ colors[1000:1550] = "lightgreen" # accepts "#90EE90" representation too
 colors[1700:2050] = "red"
 colors[2060:2140] = "lightblue"
 dygraph(data=dydata, ribbon=colors)
-dygraph(data=dydata, ribbon=list(colors=ribbon, height=0.2, pos=0.1))
+dygraph(data=dydata, ribbon=list(colors=colors, height=0.2, pos=0.1))
 ```
 
 View interactive charts [like this (link)](http://rawgit.com/danielkrizian/rChartsDygraphs/master/examples/multi-layout.html)
