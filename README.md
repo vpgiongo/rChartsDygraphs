@@ -8,7 +8,7 @@ install_github("rCharts","timelyportfolio",ref="dimple_layer") # use this specif
 install_github('rChartsDygraphs', 'danielkrizian')
 ```
 
-## Example 
+## Examples
 
 ```r
 library(rChartsDygraphs); library(quantmod); require(data.table)
