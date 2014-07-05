@@ -143,6 +143,7 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
                        , methods = list(
   initialize = function(){
     callSuper()
+    LIB <<- get_lib(lib, package = "rChartsDygraphs")
     params <<- c(params, list(options = list(width=params$width, height=params$height)))
   },
   parseData = function(data, x, y, y2, as.candlestick){
@@ -302,35 +303,4 @@ layout_dygraphs <- function(...) {
       browseURL(tf)
     }
   }
-}
-
-# Just a copy of rCharts::get_lib
-# 
-# Copied to rChartsDygraphs package namespace, for Dygraph$new() to initialize lib field properly 
-get_lib <- function(lib){
-  if (grepl("^http", lib)){
-    return(list(name = basename(lib), url = lib))
-  }
-  if (file.exists(lib)){
-    lib_url <- normalizePath(lib)
-    lib <- basename(lib_url)
-  } else {
-    lib_url <- system.file('libraries', lib, package = 'rChartsDygraphs')
-  }
-  return(list(name = basename(lib), url = lib_url))
-}
-
-# Just a copy of rCharts::add_lib_assets
-# 
-# Copied to rChartsDygraphs package namespace, so that it calls rChartsDygraphs::get_lib,
-# not rCharts::get_lib
-add_lib_assets <- function(lib, cdn = F){
-  assets = get_assets(get_lib(lib), cdn = cdn)
-  styles <- lapply(assets$css, function(style){
-    sprintf("<link rel='stylesheet' href='%s'>", style)
-  })
-  scripts <- lapply(assets$jshead, function(script){
-    sprintf("<script type='text/javascript' src='%s'></script>", script)
-  })
-  paste(c(styles, scripts), collapse = '\n')
 }
