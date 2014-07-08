@@ -146,6 +146,11 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
     LIB <<- get_lib(lib, package = "rChartsDygraphs")
     params <<- c(params, list(options = list(width=params$width, height=params$height)))
   },
+  
+  getPayload = function(chartId){
+    list(chartParams = toJSON2(params), chartId = chartId, lib = basename(lib), liburl = LIB$url)
+  },
+  
   parseData = function(data, x, y, y2, as.candlestick){
     if(is.xts(data)) {
       t = index(data)

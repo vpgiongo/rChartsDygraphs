@@ -4,7 +4,7 @@ You can install `rCharts` from `github` using the `devtools` package
 
 ```r
 require(devtools)
-install_github("rCharts","timelyportfolio",ref="dimple_layer") # use this specific branch with temp fix
+install_github("rCharts","ramnathv")
 install_github('rChartsDygraphs', 'danielkrizian')
 ```
 
