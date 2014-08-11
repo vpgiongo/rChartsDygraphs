@@ -5,7 +5,7 @@
 \usage{
 dygraph(data, x, y, y2, sync = FALSE, defaults = TRUE, rebase = c(NULL,
   100, "percent"), ribbon = list(colors = NULL, height = 1, pos = 0),
-  candlestick = is.OHLC(data), trades = NULL, ...)
+  candlestick = is.OHLC(data), trades = NULL, signals = NULL, ...)
 }
 \arguments{
 \item{data}{data.frame}
@@ -46,6 +46,8 @@ Defaults to is.OHLC(data). Effort is made to detect OHLC columns by their names.
 data must contain all of the four series. Redundant columns are discarded.}
 
 \item{trades}{data.frame with columns c("Start", "End", "Side", "Base", "PL").}
+
+\item{signals}{data.frame with columns c("Date", "Price", "sig"), see examples.}
 }
 \description{
 Some desc
@@ -73,6 +75,38 @@ colors[1000:1550] = "lightgreen" # accepts "#90EE90" representation too
 colors[1700:2050] = "red"
 colors[2060:2140] = "lightblue"
 dygraph(data=dydata, ribbon=colors)
-dygraph(data=dydata, ribbon=list(colors=ribbon, height=0.2, pos=0.1))
+dygraph(data=dydata, ribbon=list(colors=colors, height=0.2, pos=0.1))
+
+# dygraph on univariate data in data.frame
+data <- data.frame(date = index(SPY), SPY = SPY[,"SPY.Close",drop=TRUE])
+# calc indicators
+setDT(data)[,`:=`(SPY.sma50 = TTR::SMA(SPY, 50), SPY.sma200 = TTR::SMA(SPY, 200))]
+# dygraph a little more control and some commonly used options
+dygraph(data = as.data.frame(data),
+        x = "date",
+        y = c("SPY","SPY.sma50","SPY.sma200"),
+        logscale = FALSE,
+        title = "my SPY price chart",
+        xlabel = "time",
+        ylabel = "SPY price",
+        colors = c("black","red","blue"))
+signals <- data[,.SD # prevent write to `data`
+                ][,sig:=ifelse(SPY.sma50>SPY.sma200, 1, ifelse(SPY.sma50<SPY.sma200, -1, NA_real_))
+                  ][,sig:=zoo::na.locf(sig,na.rm=FALSE) # fill gaps with last sig
+                    ][is.na(sig), sig:=0 # decode leading NA to 0
+                      ][,sig_change:=sig!=c(0,sig[.I-1]) # check if signal changed
+                        ][sig_change==FALSE, sig:=0 # skip signals when no change
+                          ][,list(Date=date,Price=SPY,sig=c(0,sig[.I-1])) # apply 1 period lag
+                            ]
+# dygraph and signals
+dygraph(data = as.data.frame(data),
+        x = "date",
+        y = c("SPY","SPY.sma50","SPY.sma200"),
+        logscale = FALSE,
+        title = "my SPY price chart",
+        xlabel = "time",
+        ylabel = "SPY price",
+        colors = c("black","red","blue"),
+        signals = signals)
 }
 

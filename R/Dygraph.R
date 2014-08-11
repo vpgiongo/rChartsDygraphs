@@ -29,6 +29,7 @@
 #' Defaults to is.OHLC(data). Effort is made to detect OHLC columns by their names.
 #' data must contain all of the four series. Redundant columns are discarded.
 #' @param trades data.frame with columns c("Start", "End", "Side", "Base", "PL"). 
+#' @param signals data.frame with columns c("Date", "Price", "sig"), see examples.
 #' @export
 #' @import quantmod
 #' @import data.table
@@ -56,6 +57,39 @@
 #' colors[2060:2140] = "lightblue"
 #' dygraph(data=dydata, ribbon=colors)
 #' dygraph(data=dydata, ribbon=list(colors=colors, height=0.2, pos=0.1))
+#' 
+#' # dygraph on univariate data in data.frame
+#' data <- data.frame(date = index(SPY), SPY = SPY[,"SPY.Close",drop=TRUE])
+#' # calc indicators
+#' setDT(data)[,`:=`(SPY.sma50 = TTR::SMA(SPY, 50), SPY.sma200 = TTR::SMA(SPY, 200))]
+#' # dygraph a little more control and some commonly used options
+#' dygraph(data = as.data.frame(data),
+#'         x = "date",
+#'         y = c("SPY","SPY.sma50","SPY.sma200"),
+#'         logscale = FALSE,
+#'         title = "my SPY price chart",
+#'         xlabel = "time", 
+#'         ylabel = "SPY price",
+#'         colors = c("black","red","blue"))
+# populate signals SMA200/SMA50 cross
+#' signals <- data[,.SD # prevent write to `data`
+#'                 ][,sig:=ifelse(SPY.sma50>SPY.sma200, 1, ifelse(SPY.sma50<SPY.sma200, -1, NA_real_))
+#'                   ][,sig:=zoo::na.locf(sig,na.rm=FALSE) # fill gaps with last sig
+#'                     ][is.na(sig), sig:=0 # decode leading NA to 0
+#'                       ][,sig_change:=sig!=c(0,sig[.I-1]) # check if signal changed
+#'                         ][sig_change==FALSE, sig:=0 # skip signals when no change
+#'                           ][,list(Date=date,Price=SPY,sig=c(0,sig[.I-1])) # apply 1 period lag
+#'                             ]
+#' # dygraph and signals
+#' dygraph(data = as.data.frame(data),
+#'         x = "date",
+#'         y = c("SPY","SPY.sma50","SPY.sma200"),
+#'         logscale = FALSE,
+#'         title = "my SPY price chart",
+#'         xlabel = "time", 
+#'         ylabel = "SPY price",
+#'         colors = c("black","red","blue"),
+#'         signals = signals)
 dygraph <- dgPlot <- dyPlot <- 
   dygraphPlot <- function(data, x, y, y2, 
                           sync=FALSE, 
@@ -64,23 +98,27 @@ dygraph <- dgPlot <- dyPlot <-
                           ribbon=list(colors=NULL, height=1, pos=0),
                           candlestick=is.OHLC(data),
                           trades=NULL,
+                          signals=NULL,
                           ...){
   
   myChart <- Dygraph$new()
   myChart$parseData(data, x, y, y2, as.candlestick=candlestick)
-  if(defaults)
+  if(defaults){
     myChart$setDefaults(...)
+  }
   myChart$setOpts(...) # dygraph javascript options
   myChart$setTemplate(script = system.file("/libraries/dygraph/layouts/chart2.html"
                                          , package = "rChartsDygraphs"))
   myChart$setTemplate(afterScript = "<script></script>")
-  if(sync)
+  if(sync){
     myChart$synchronize()
+  }
   if(candlestick) {
     myChart$candlestick()
   }
-  if(!missing(rebase))
+  if(!missing(rebase)){
     myChart$setOpts(rebase=rebase)
+  }
   if(!missing(ribbon)){
     if(!is.list(ribbon)) # allow for supplying a simple vector in the argument
       ribbon=list(colors=ribbon, height=1, pos=0)
@@ -95,6 +133,36 @@ dygraph <- dgPlot <- dyPlot <-
     rd = as.integer(rencodings) - 1
     pal = levels(rencodings)
     myChart$setOpts(ribbonData=rd, ribbon=list(palette=pal, height=h, position=p))
+  }
+  if(length(signals)){
+    ann = as.data.table(signals)[!is.na(sig)][sig%in%c(1,-1)]
+    ann[, canvas:="#!Dygraph.Circles.ARROW!#"]
+    ann[sig==1,`:=`(rotation="up",fillStyle="green")][sig==-1, `:=`(rotation="down",fillStyle="red")]
+    ann[, strokeStyle:="black"]
+    ann[, x:= paste0("#!Date.parse('", Date, "')!#")]
+    ann[, series:=1]
+    ann[, text:=paste0("<p><strong>Price</strong> ", round(Price,2), "<br>","</p>")]
+    ann = ann[,c("series", "x", "canvas", "rotation","fillStyle", "strokeStyle","text"), with=F]
+    myChart$setOpts(annotations=toJSONArray(ann, json=F))
+    myChart$setOpts(annotationMouseOverHandler= "#!
+      function(ann, point, dg, event) {
+        var bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.id = 'bubble' + ann.series + ann.x + i;
+        bubble.innerHTML = ann.text;
+        bubble.style.top = point.canvasy + 'px';
+        bubble.style.left = point.canvasx + 'px';
+        dg.graphDiv.appendChild(bubble);
+        ann.div.title = '';
+      }!#")
+    myChart$setOpts(annotationMouseOutHandler= "#!
+      function(ann, point, dg, event) {
+        var bubble = document.getElementById('bubble' + ann.series + ann.x + i);
+        if (bubble && bubble.parentNode) {
+          bubble.parentNode.removeChild(bubble);
+        }
+      }!#")
+    myChart$setTemplate(script=system.file("/libraries/dygraph/layouts/annotations.html", package = "rChartsDygraphs"))
   }
   if(length(trades)){
     trades = as.data.table(trades)
@@ -153,13 +221,15 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
   
   parseData = function(data, x, y, y2, as.candlestick){
     if(is.xts(data)) {
-      t = index(data)
-      data = cbind(t, as.data.frame(data))
+      t <- index(data)
+      data <- cbind(t, as.data.frame(data))
     }
-    if(missing(x)) #TODO: detect using xts:::timeBased
+    if(missing(x)){ #TODO: detect using xts:::timeBased
       x <- names(data)[1]
-    if(missing(y))
+    }
+    if(missing(y)){
       y = setdiff(names(data), x)
+    }
     
     # dygraphs.js requirement: data must be exactly 4 columns in specific order
     if(as.candlestick){
@@ -169,7 +239,7 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
     }
     
     data[[x]] <- paste0("#!new Date(", as.numeric(as.POSIXct(data[[x]])) * 1000, ")!#")
-    data[y] = lapply(data[y], function(x) as.numeric(x)) # temp fix for logical values
+    data[y] <- lapply(data[y], function(x) as.numeric(x)) # temp fix for logical values
     data <- data[,c(x, y)]
     params <<- modifyList(params, getLayer(x=x, data=data, y=y))
     setOpts(labels=c(x, y)) # because lodash drops column names
@@ -179,7 +249,7 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
     safe <- function(x) if (length(x)) x else FALSE
     
     # make floating legend more readable by default
-    if(safe(args$legendFollow))
+    if(safe(args$legendFollow)){
       setOpts(labelsDivStyles=list(
         pointerEvents='none', # let mouse events fall through the legend div
         # borderRadius='10px',
@@ -187,8 +257,11 @@ Dygraph <- setRefClass('Dygraph', contains = 'rCharts'
         # background='none',
         backgroundColor='rgba(255, 255, 255, 0.5)'
       ))
-    if(!"rightGap" %in% names(args))
+    }
+
+    if(!"rightGap" %in% names(args)){
       setOpts(rightGap=20) # makes it easier to highlight the right-most data point.
+    }
   },
   setOpts = function(...){
     opts <- list(...)
