@@ -90,6 +90,7 @@ dygraph(data = as.data.frame(data),
         xlabel = "time",
         ylabel = "SPY price",
         colors = c("black","red","blue"))
+# populate signals SMA200/SMA50 cross
 signals <- data[,.SD # prevent write to `data`
                 ][,sig:=ifelse(SPY.sma50>SPY.sma200, 1, ifelse(SPY.sma50<SPY.sma200, -1, NA_real_))
                   ][,sig:=zoo::na.locf(sig,na.rm=FALSE) # fill gaps with last sig
